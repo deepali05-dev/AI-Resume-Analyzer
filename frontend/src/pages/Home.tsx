@@ -3,12 +3,21 @@ import { useState } from "react";
 function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // API response states
+  const [skills, setSkills] = useState<string[]>([]);
+  const [atsScore, setAtsScore] = useState<number | null>(null);
+  const [jobScore, setJobScore] = useState<number | null>(null);
+  const [missingSkills, setMissingSkills] = useState<string[]>([]);
 
   const uploadResume = async () => {
     if (!selectedFile) {
       setError("Please select a resume first.");
       return;
     }
+
+    setLoading(true);
 
     const formData = new FormData();
     formData.append("file", selectedFile);
@@ -21,10 +30,11 @@ function Home() {
 
       const data = await response.json();
 
-      console.log("Backend Response:", data);
-
       if (response.ok) {
-        alert(`Uploaded Successfully: ${data.filename}`);
+        setSkills(data.skills || []);
+        setAtsScore(data.ats_score);
+        setJobScore(data.job_match_score);
+        setMissingSkills(data.missing_skills || []);
         setError("");
       } else {
         setError("Upload failed!");
@@ -32,83 +42,150 @@ function Home() {
     } catch (err) {
       setError("Server error. Please try again.");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex flex-col items-center justify-center px-6">
-      
-      <h1 className="text-5xl md:text-6xl font-extrabold text-blue-700 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 px-6 py-10 flex flex-col items-center">
+
+      {/* HEADER */}
+      <h1 className="text-5xl font-extrabold text-blue-700">
         🤖 AI Resume Analyzer
       </h1>
 
-      <p className="mt-6 max-w-2xl text-center text-xl text-gray-600">
-        Upload your resume and get an ATS score instantly.
+      <p className="mt-3 text-gray-600 text-lg">
+        Upload your resume and get AI-powered insights instantly
       </p>
 
-      <div className="mt-10 rounded-2xl bg-white p-8 shadow-xl">
-        
-        <h2 className="mb-4 text-2xl font-bold">
-          Upload Your Resume
-        </h2>
+      {/* UPLOAD BOX */}
+      <div className="mt-8 bg-white p-6 rounded-2xl shadow-xl w-full max-w-xl">
 
-        {/* Upload Button */}
         <label
           htmlFor="resume"
-          className="cursor-pointer rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-blue-700"
+          className="cursor-pointer block text-center bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700"
         >
-          📄 Upload Resume
+          📄 Choose Resume
         </label>
 
-        {/* Hidden File Input */}
         <input
           id="resume"
           type="file"
           className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-
+          onChange={(e) => {
+            const file = e.target.files?.[0];
             if (!file) return;
 
-            const allowedTypes = [
-              "application/pdf",
-              "application/msword",
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ];
-
-            if (!allowedTypes.includes(file.type)) {
-              setError("❌ Please upload only PDF, DOC, or DOCX files.");
-              setSelectedFile(null);
-              return;
-            }
-
-            setError("");
             setSelectedFile(file);
+            setError("");
           }}
         />
 
-        {/* Upload to backend button */}
-        <button
-          onClick={uploadResume}
-          className="mt-4 rounded-xl bg-green-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-green-700"
-        >
-          ⬆️ Upload Resume
-        </button>
-
-        {/* Selected file */}
+        {/* Selected File */}
         {selectedFile && (
-          <p className="mt-4 text-green-600 font-medium">
+          <p className="mt-3 text-green-600 text-center font-medium">
             ✅ {selectedFile.name}
           </p>
         )}
 
-        {/* Error message */}
-        {error && (
-          <p className="mt-4 text-red-600 font-medium">
-            {error}
-          </p>
-        )}
+        {/* Upload Button */}
+        <button
+          onClick={uploadResume}
+          className="mt-4 w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700"
+        >
+          {loading ? (
+            <span className="animate-pulse">Analyzing Resume...</span>
+          ) : (
+            "⬆️ Upload Resume"
+          )}
+        </button>
 
+        {/* Error */}
+        {error && (
+          <p className="mt-3 text-red-600 text-center">{error}</p>
+        )}
       </div>
+
+      {/* DASHBOARD TITLE */}
+      {(atsScore !== null || skills.length > 0) && (
+        <h2 className="mt-10 text-2xl font-bold text-gray-700">
+          📊 Resume Analysis Dashboard
+        </h2>
+      )}
+
+      {/* DASHBOARD */}
+      {(atsScore !== null || skills.length > 0) && (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl">
+
+          {/* ATS SCORE CARD */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl text-center">
+            <h2 className="text-xl font-bold text-gray-700">ATS Score</h2>
+
+            <div className="relative w-32 h-32 mx-auto mt-4">
+              <div className="w-full h-full rounded-full border-8 border-blue-100"></div>
+
+              <div
+                className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-blue-600"
+                style={{
+                  clipPath: `inset(${100 - (atsScore || 0)}% 0 0 0)`
+                }}
+              ></div>
+
+              <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-blue-700">
+                {atsScore}
+              </div>
+            </div>
+          </div>
+
+          {/* JOB MATCH */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl text-center">
+            <h2 className="text-xl font-bold text-gray-700">Job Match</h2>
+
+            <div className="w-full bg-gray-200 rounded-full h-3 mt-6">
+              <div
+                className="bg-green-500 h-3 rounded-full"
+                style={{ width: `${jobScore || 0}%` }}
+              ></div>
+            </div>
+
+            <p className="mt-2 text-lg font-semibold text-green-600">
+              {jobScore}% Match
+            </p>
+          </div>
+
+          {/* SKILLS */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl">
+            <h2 className="text-xl font-bold text-gray-700 mb-3">Skills Found</h2>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill, i) => (
+                <span
+                  key={i}
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* MISSING SKILLS */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl">
+            <h2 className="text-xl font-bold text-gray-700 mb-3">Missing Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {missingSkills.map((skill, i) => (
+                <span
+                  key={i}
+                  className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }
