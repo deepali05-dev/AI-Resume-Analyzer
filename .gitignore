@@ -1,0 +1,12 @@
+(.venv) PS C:\Users\deepa\OneDrive\Desktop\AI-Resume-Analyzer> .gitignore
+.gitignore : The term '.gitignore' is not recognized as the name of a cmdlet, 
+function, script file, or operable program. Check the spelling of the name, or if a 
+path was included, verify that the path is correct and try again.
+At line:1 char:1
++ .gitignore
++ ~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (.gitignore:String) [], CommandNotFoundE 
+   xception
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+(.venv) PS C:\Users\deepa\OneDrive\Desktop\AI-Resume-Analyzer>
